@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ProgressBar?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
+<?import javafx.scene.web.WebView?>
+
+<VBox fx:id="vbSeries" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="800.0" prefWidth="1000.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1">
+   <children>
+      <AnchorPane prefHeight="800.0" prefWidth="1000.0">
+         <children>
+            <Button layoutX="296.0" layoutY="65.0" mnemonicParsing="false" onAction="#start" text="START" />
+            <TableView fx:id="tvData" layoutX="373.0" layoutY="14.0" onMouseClicked="#showData" prefHeight="376.0" prefWidth="613.0" />
+            <ComboBox fx:id="cbChoose" layoutX="78.0" layoutY="65.0" prefHeight="25.0" prefWidth="173.0" />
+            <Label fx:id="lStatus" layoutX="683.0" layoutY="396.0" prefHeight="25.0" prefWidth="302.0" textFill="#6b0404">
+               <font>
+                  <Font name="Terminator Two" size="18.0" />
+               </font>
+            </Label>
+            <Label layoutX="58.0" layoutY="5.0" prefHeight="60.0" prefWidth="263.0" text="SERIESAPP">
+               <font>
+                  <Font name="Futurama Bold Font" size="35.0" />
+               </font>
+            </Label>
+            <ImageView fx:id="ivImage" fitHeight="285.0" fitWidth="329.0" layoutX="22.0" layoutY="105.0" pickOnBounds="true" preserveRatio="true" />
+            <Label fx:id="lTitle" alignment="TOP_CENTER" layoutX="19.0" layoutY="400.0" prefHeight="74.0" prefWidth="338.0" text="TITULO DE LA SERIE" textAlignment="CENTER">
+               <font>
+                  <Font name="Tw Cen MT Condensed Bold" size="38.0" />
+               </font>
+            </Label>
+            <Label layoutX="23.0" layoutY="495.0" text="FECHA">
+               <font>
+                  <Font name="Tw Cen MT Condensed" size="18.0" />
+               </font>
+            </Label>
+            <Label layoutX="23.0" layoutY="522.0" text="VOTOS">
+               <font>
+                  <Font name="Tw Cen MT Condensed" size="18.0" />
+               </font>
+            </Label>
+            <Label layoutX="22.0" layoutY="548.0" prefHeight="17.0" prefWidth="52.0" text="PUNTOS">
+               <font>
+                  <Font name="Tw Cen MT Condensed" size="18.0" />
+               </font>
+            </Label>
+            <Label layoutX="17.0" layoutY="586.0" prefHeight="21.0" prefWidth="62.0" text=" SINOPSIS">
+               <font>
+                  <Font name="Tw Cen MT Condensed" size="18.0" />
+               </font>
+            </Label>
+            <Label fx:id="lDate" layoutX="89.0" layoutY="496.0" prefHeight="19.0" prefWidth="150.0">
+               <font>
+                  <Font name="Times New Roman" size="16.0" />
+               </font>
+            </Label>
+            <Label fx:id="lVotes" layoutX="89.0" layoutY="523.0" prefHeight="19.0" prefWidth="150.0">
+               <font>
+                  <Font name="Times New Roman" size="16.0" />
+               </font>
+            </Label>
+            <Label fx:id="lRate" layoutX="89.0" layoutY="549.0" prefHeight="19.0" prefWidth="150.0">
+               <font>
+                  <Font name="Times New Roman" size="16.0" />
+               </font>
+            </Label>
+            <TextArea fx:id="taOverview" layoutX="89.0" layoutY="586.0" prefHeight="204.0" prefWidth="269.0">
+               <font>
+                  <Font name="Times New Roman Bold" size="16.0" />
+               </font>
+            </TextArea>
+            <Button layoutX="292.0" layoutY="503.0" mnemonicParsing="false" onAction="#trailer" prefHeight="25.0" prefWidth="62.0" text="TRAILER" />
+            <WebView fx:id="wvTrailer" layoutX="373.0" layoutY="425.0" prefHeight="364.0" prefWidth="613.0" />
+            <ProgressBar fx:id="pbLoading" layoutX="373.0" layoutY="400.0" prefHeight="18.0" prefWidth="302.0" progress="0.0" />
+            <Button layoutX="292.0" layoutY="535.0" mnemonicParsing="false" onAction="#zoomUp" prefHeight="25.0" prefWidth="27.0" text="+" />
+            <Button layoutX="327.0" layoutY="535.0" mnemonicParsing="false" onAction="#zoomDown" prefHeight="25.0" prefWidth="27.0" text="-" />
+         </children>
+      </AnchorPane>
+   </children>
+</VBox>
