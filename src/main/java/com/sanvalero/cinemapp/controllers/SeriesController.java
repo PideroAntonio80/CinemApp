@@ -18,9 +18,12 @@ import javafx.scene.web.WebEngine;
 import javafx.scene.web.WebView;
 
 import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.net.URL;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -29,7 +32,10 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
+import javafx.stage.FileChooser;
 import javafx.util.Duration;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVPrinter;
 import rx.Observable;
 import rx.schedulers.Schedulers;
 
@@ -39,7 +45,7 @@ import rx.schedulers.Schedulers;
  */
 public class SeriesController implements Initializable {
 
-    public ComboBox<String> cbChoose;
+    public TextField tfSearch;
     public TableView<Serie> tvData;
     public ImageView ivImage;
     public Label lStatus;
@@ -66,65 +72,31 @@ public class SeriesController implements Initializable {
     public void initialize(URL url, ResourceBundle resourceBundle) {
         putTableColumnsSeries();
 
-        String[] options = new String[]{"<<Fitrar>>", "Lista Series", "Votos (Mayor a menor)", "Puntos (Mayor a menor)"};
-        cbChoose.setValue("<<Fitrar>>");
-        cbChoose.setItems(FXCollections.observableArrayList(options));
-
         engine = wvTrailer.getEngine();
 
         movieService = new MovieService();
 
-        CompletableFuture.runAsync(() -> {
-            pbLoading.setProgress(ProgressIndicator.INDETERMINATE_PROGRESS);
-            try {
-                Thread.sleep(3000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            loadingSeries();})
-                .whenComplete((string, throwable) -> pbLoading.setVisible(false));
+        completeLoad();
     }
 
     @FXML
-    public void start(ActionEvent event) {
-        String option = cbChoose.getValue();
+    public void all(ActionEvent event) {
+        tvData.getItems().clear();
+        completeLoad();
+    }
 
-        switch (option) {
+    @FXML
+    public void search(ActionEvent event) {
+        String option = tfSearch.getText();
 
-            case "Lista Series":
-                tvData.getItems().clear();
-                pbLoading.setVisible(true);
-                CompletableFuture.runAsync(() -> {
-                    pbLoading.setProgress(ProgressIndicator.INDETERMINATE_PROGRESS);
-                    try {
-                        Thread.sleep(3000);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                    loadingSeries();})
-                        .whenComplete((string, throwable) -> pbLoading.setVisible(false));
-
-                break;
-
-            case "Votos (Mayor a menor)":
-                tvData.getItems().clear();
-                CompletableFuture.runAsync(this::loadingByVotes);
-                loadingInfo();
-
-                break;
-
-            case "Puntos (Mayor a menor)":
-                tvData.getItems().clear();
-                CompletableFuture.runAsync(this::loadingByRate);
-                loadingInfo();
-
-                break;
-
-            default:
-                AlertUtils.mostrarInformacion("Debes elegir una opción");
-
-                break;
+        if (option.equals("")) {
+            AlertUtils.mostrarError("Debes rellenar el campo de texto");
+            return;
         }
+
+        //tvData.getItems().clear();
+
+        loadingSeriesFilter(option);
     }
 
     @FXML
@@ -189,11 +161,6 @@ public class SeriesController implements Initializable {
         wvTrailer.setZoom(zoom);
     }
 
-    //TODO progressBar. Aquí y en pelis, ver si esta bien
-    //TODO Más filtros
-    //TODO Más Rx
-    //TODO Revisar enunciado Actividad Aprendizaje de PSP para ver qué falta
-
     public void putTableColumnsSeries() {
         Field[] fields = Serie.class.getDeclaredFields();
         for (Field field : fields) {
@@ -209,7 +176,6 @@ public class SeriesController implements Initializable {
 
     public void loadingSeries() {
         tvData.setItems(mySeries);
-        //List<Serie> series = null;
 
         movieService.getAllSeries()
                 .doOnCompleted(() -> System.out.println("Listado de series descargado"))
@@ -219,32 +185,27 @@ public class SeriesController implements Initializable {
                 });
     }
 
-    public void loadingByVotes() {
-        tvData.setItems(mySeries);
-        //List<Serie> series = null;
-        Comparator<Serie> votesComparator = Comparator.comparing(Serie::getVote_count);
-
-        movieService.getAllSeries()
-                .map(SeriesApiResults::getResults)
-                .doOnCompleted(() -> System.out.println("Listado de series descargado"))
-                .subscribeOn(Schedulers.from(Executors.newCachedThreadPool()))
-                .subscribe(ls -> {
-                    mySeries.sort(votesComparator);
-                    mySeries.addAll();
-                });
+    public void completeLoad() {
+        pbLoading.setVisible(true);
+        CompletableFuture.runAsync(() -> {
+            pbLoading.setProgress(ProgressIndicator.INDETERMINATE_PROGRESS);
+            try {
+                Thread.sleep(3000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            loadingSeries();})
+                .whenComplete((string, throwable) -> pbLoading.setVisible(false));
     }
 
-    public void loadingByRate() {
-        tvData.setItems(mySeries);
-        //List<Serie> series = null;
+    public void loadingSeriesFilter(String optionSearch) {
 
-        movieService.getAllSeries()
-                .doOnCompleted(() -> System.out.println("Listado de series descargado"))
-                .subscribeOn(Schedulers.from(Executors.newCachedThreadPool()))
-                .subscribe(sar -> {sar.getResults();
-                    mySeries.addAll(sar.getResults());
-                    mySeries.stream().sorted(Comparator.comparing(Serie::getVote_average).reversed());
-                });
+        List<Serie> series = mySeries.stream()
+                .filter(serie -> serie.getOriginal_name().contains(optionSearch))
+                .distinct()
+                .collect(Collectors.toList());
+
+        tvData.setItems(FXCollections.observableArrayList(series));
     }
 
     public void transitionLabel(int segundos) {

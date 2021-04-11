@@ -2,7 +2,6 @@ package com.sanvalero.cinemapp.controllers;
 
 import com.sanvalero.cinemapp.domain.Movie;
 import com.sanvalero.cinemapp.service.MovieService;
-import com.sanvalero.cinemapp.tasks.LoadMoviesTask;
 import com.sanvalero.cinemapp.util.AlertUtils;
 import com.sanvalero.cinemapp.util.R;
 import javafx.animation.PauseTransition;
@@ -19,13 +18,19 @@ import javafx.scene.image.ImageView;
 import javafx.scene.layout.VBox;
 import javafx.scene.web.WebEngine;
 import javafx.scene.web.WebView;
+import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.util.Duration;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVPrinter;
 
 import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.net.URL;
+import java.sql.SQLException;
 import java.util.Comparator;
 import java.util.List;
 import java.util.ResourceBundle;
@@ -52,11 +57,11 @@ public class AppController implements Initializable {
     public VBox vbMovies;
     public VBox vbSeries;
 
-    private LoadMoviesTask task;
-
     private WebEngine engine;
 
     private double zoom = 1;
+
+    private List<Movie> moviesList;
 
     private MovieService movieService;
 
@@ -90,13 +95,12 @@ public class AppController implements Initializable {
 
     @FXML
     public void start(ActionEvent event) {
-
+        tvData.getItems().clear();
         String option = cbChoose.getValue();
 
         switch (option) {
 
             case "Lista Películas":
-                tvData.getItems().clear();
                 pbLoading.setVisible(true);
                 CompletableFuture.runAsync(() -> {
                     pbLoading.setProgress(ProgressIndicator.INDETERMINATE_PROGRESS);
@@ -111,28 +115,24 @@ public class AppController implements Initializable {
                 break;
 
             case "Votos (Descendente)":
-                //tvData.getItems().clear();
                 CompletableFuture.runAsync(this::loadingByVotesDesc);
                 loadingInfo();
 
                 break;
 
             case "Puntos(Descendente)":
-                //tvData.getItems().clear();
                 CompletableFuture.runAsync(this::loadingByRateDesc);
                 loadingInfo();
 
                 break;
 
             case "Votos (Ascendente)":
-                //tvData.getItems().clear();
                 CompletableFuture.runAsync(this::loadingByVotesAsc);
                 loadingInfo();
 
                 break;
 
             case "Puntos (Ascendente)":
-                //tvData.getItems().clear();
                 CompletableFuture.runAsync(this::loadingByRateAsc);
                 loadingInfo();
 
@@ -212,6 +212,26 @@ public class AppController implements Initializable {
         wvTrailer.setZoom(zoom);
     }
 
+    @FXML
+    public void export(ActionEvent Event) {
+        try {
+            FileChooser fileChooser = new FileChooser();
+            File file = fileChooser.showSaveDialog(null);
+            FileWriter fileWriter = new FileWriter(file);
+
+            CSVPrinter printer = new CSVPrinter(fileWriter, CSVFormat.TDF.withHeader("Nombre;", "Fecha;", "Votos;","Puntos;", "Sinopsis;"));
+            for (Movie movie : moviesList) {
+                printer.printRecord(movie.getOriginal_title(), ';', movie.getRelease_date(), ';', movie.getVote_count(), ';', movie.getVote_average(), ';', movie.getOverview());
+            }
+            printer.close();
+            lStatus.setText("Datos transferidos");
+            transitionLabel(2);
+
+        } catch (IOException ioe) {
+            AlertUtils.mostrarError("Error al exportar los datos");
+        }
+    }
+
     public void putTableColumnsMovies() {
         Field[] fields = Movie.class.getDeclaredFields();
         for (Field field : fields) {
@@ -228,40 +248,30 @@ public class AppController implements Initializable {
     public void loadingMovies() {
         List<Movie> movies = movieService.getAllMovies();
 
+        moviesList = movies;
+
         tvData.setItems(FXCollections.observableArrayList(movies));
-
-        /*task = new LoadMoviesTask(tvData);
-
-        pbLoading.setProgress(ProgressIndicator.INDETERMINATE_PROGRESS);
-
-        lStatus.setText("Cargando Peliculas...");
-
-        new Thread(task).start();
-
-        task.stateProperty().addListener((observableValue, state, newState) -> {
-            if(newState == Worker.State.SUCCEEDED) {
-                lStatus.setText("Carga Finalizada");
-                transicionLabel(2);
-            }
-        });*/
     }
 
     public void loadingByVotesDesc() {
-            List<Movie> movies = movieService.getAllMovies();
-            List<Movie> moviesByVotes = movies.stream()
-                    .sorted(Comparator.comparing(Movie::getVote_count).reversed())
-                    .collect(Collectors.toList());
+        List<Movie> movies = movieService.getAllMovies();
+        List<Movie> moviesByVotes = movies.stream()
+                .sorted(Comparator.comparing(Movie::getVote_count).reversed())
+                .collect(Collectors.toList());
 
+        moviesList = movies;
 
-            tvData.setItems(FXCollections.observableArrayList(moviesByVotes));
+        tvData.setItems(FXCollections.observableArrayList(moviesByVotes));
     }
 
     public void loadingByRateDesc() {
         List<Movie> movies = movieService.getAllMovies();
         List<Movie> moviesByRate = movies.stream()
-                .filter(movie -> movie.getVote_average() > 0)
+                //.filter(movie -> movie.getVote_average() > 0)
                 .sorted(Comparator.comparing(Movie::getVote_average).reversed())
                 .collect(Collectors.toList());
+
+        moviesList = movies;
 
         tvData.setItems(FXCollections.observableArrayList(moviesByRate));
     }
@@ -272,6 +282,7 @@ public class AppController implements Initializable {
                 .sorted(Comparator.comparing(Movie::getVote_count))
                 .collect(Collectors.toList());
 
+        moviesList = movies;
 
         tvData.setItems(FXCollections.observableArrayList(moviesByVotes));
     }
@@ -279,9 +290,10 @@ public class AppController implements Initializable {
     public void loadingByRateAsc() {
         List<Movie> movies = movieService.getAllMovies();
         List<Movie> moviesByRate = movies.stream()
-                .filter(movie -> movie.getVote_average() > 0)
                 .sorted(Comparator.comparing(Movie::getVote_average))
                 .collect(Collectors.toList());
+
+        moviesList = movies;
 
         tvData.setItems(FXCollections.observableArrayList(moviesByRate));
     }
