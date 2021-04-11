@@ -1,6 +1,7 @@
 package com.sanvalero.cinemapp.controllers;
 
-import com.sanvalero.cinemapp.domain.*;
+import com.sanvalero.cinemapp.domain.Serie;
+import com.sanvalero.cinemapp.domain.Trailer;
 import com.sanvalero.cinemapp.service.MovieService;
 import com.sanvalero.cinemapp.util.AlertUtils;
 import javafx.animation.PauseTransition;
@@ -16,28 +17,18 @@ import javafx.scene.image.ImageView;
 import javafx.scene.layout.VBox;
 import javafx.scene.web.WebEngine;
 import javafx.scene.web.WebView;
+import javafx.util.Duration;
+import rx.schedulers.Schedulers;
 
 import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.net.URL;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.ResourceBundle;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
-
-import javafx.stage.FileChooser;
-import javafx.util.Duration;
-import org.apache.commons.csv.CSVFormat;
-import org.apache.commons.csv.CSVPrinter;
-import rx.Observable;
-import rx.schedulers.Schedulers;
 
 /**
  * Creado por @ author: Pedro Orós
@@ -142,7 +133,6 @@ public class SeriesController implements Initializable {
         engine.load(baseUrlTrailer + myTrailers.get(0).getKey());*/
 
         int serieId = serie.getId();
-        System.out.println(serieId);
 
         String baseUrlTrailer = "https://www.youtube.com/watch?v=";
         String trailer = movieService.getTrailerSerie(serieId).get(0).getKey();

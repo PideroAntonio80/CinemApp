@@ -23,6 +23,7 @@
             <items>
               <MenuItem mnemonicParsing="false" text="Close" />
                   <MenuItem mnemonicParsing="false" onAction="#export" text="Exportar" />
+                  <MenuItem mnemonicParsing="false" onAction="#exportToZip" text="Exportar a Zip" />
             </items>
           </Menu>
           <Menu mnemonicParsing="false" text="Edit">
@@ -43,9 +44,9 @@
             <TableView fx:id="tvData" layoutX="307.0" layoutY="8.0" onMouseClicked="#showData" prefHeight="281.0" prefWidth="502.0" />
             <ComboBox fx:id="cbChoose" layoutX="87.0" layoutY="47.0" prefHeight="25.0" prefWidth="147.0" />
             <Button layoutX="16.0" layoutY="47.0" mnemonicParsing="false" onAction="#series" text="SERIES" />
-            <Label fx:id="lStatus" layoutX="615.0" layoutY="294.0" prefHeight="25.0" prefWidth="209.0" textFill="#6b0404">
+            <Label fx:id="lStatus" layoutX="615.0" layoutY="294.0" prefHeight="25.0" prefWidth="195.0" textFill="#6b0404">
                <font>
-                  <Font name="Terminator Two" size="18.0" />
+                  <Font name="Arial Black" size="15.0" />
                </font>
             </Label>
             <Label layoutX="43.0" prefHeight="47.0" prefWidth="263.0" text="CINEMAPP">

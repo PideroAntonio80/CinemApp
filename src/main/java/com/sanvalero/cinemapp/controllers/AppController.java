@@ -24,18 +24,16 @@ import javafx.util.Duration;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 import java.lang.reflect.Field;
 import java.net.URL;
-import java.sql.SQLException;
 import java.util.Comparator;
 import java.util.List;
 import java.util.ResourceBundle;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 /**
  * Creado por @ author: Pedro Orós
@@ -214,21 +212,56 @@ public class AppController implements Initializable {
 
     @FXML
     public void export(ActionEvent Event) {
-        try {
-            FileChooser fileChooser = new FileChooser();
-            File file = fileChooser.showSaveDialog(null);
-            FileWriter fileWriter = new FileWriter(file);
+        export();
+        lStatus.setText("Datos transferidos");
+        transitionLabel(2);
+    }
 
-            CSVPrinter printer = new CSVPrinter(fileWriter, CSVFormat.TDF.withHeader("Nombre;", "Fecha;", "Votos;","Puntos;", "Sinopsis;"));
+    @FXML
+    public void exportToZip(ActionEvent Event) {
+        CompletableFuture.supplyAsync(this::export)
+                .thenAccept(this::compressToZip)
+                .whenComplete((string, throwable) ->
+                        System.out.println("Datos comprimidos"));
+    }
+
+    public String export() {
+        FileChooser fileChooser = new FileChooser();
+        File file = fileChooser.showSaveDialog(null);
+
+        try {
+            FileWriter fileWriter = new FileWriter(file);
+            CSVPrinter printer = new CSVPrinter(fileWriter, CSVFormat.TDF.withHeader("Nombre;", "Fecha;", "Votos;","Puntos;"));
             for (Movie movie : moviesList) {
-                printer.printRecord(movie.getOriginal_title(), ';', movie.getRelease_date(), ';', movie.getVote_count(), ';', movie.getVote_average(), ';', movie.getOverview());
+                printer.printRecord(movie.getOriginal_title(), ';', movie.getRelease_date(), ';', movie.getVote_count(), ';', movie.getVote_average());
             }
             printer.close();
-            lStatus.setText("Datos transferidos");
-            transitionLabel(2);
 
         } catch (IOException ioe) {
             AlertUtils.mostrarError("Error al exportar los datos");
+        }
+        return String.valueOf(file);
+    }
+
+    public void compressToZip(String sourceFile) {
+
+        try {
+            FileOutputStream fos = new FileOutputStream("compressed.zip");
+            ZipOutputStream zipOut = new ZipOutputStream(fos);
+            File fileToZip = new File(sourceFile);
+            FileInputStream fis = new FileInputStream(fileToZip);
+            ZipEntry zipEntry = new ZipEntry(fileToZip.getName());
+            zipOut.putNextEntry(zipEntry);
+            byte[] bytes = new byte[1024];
+            int length;
+            while ((length = fis.read(bytes)) >= 0) {
+                zipOut.write(bytes, 0, length);
+            }
+            zipOut.close();
+            fis.close();
+            fos.close();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 
@@ -259,7 +292,7 @@ public class AppController implements Initializable {
                 .sorted(Comparator.comparing(Movie::getVote_count).reversed())
                 .collect(Collectors.toList());
 
-        moviesList = movies;
+        moviesList = moviesByVotes;
 
         tvData.setItems(FXCollections.observableArrayList(moviesByVotes));
     }
@@ -267,11 +300,10 @@ public class AppController implements Initializable {
     public void loadingByRateDesc() {
         List<Movie> movies = movieService.getAllMovies();
         List<Movie> moviesByRate = movies.stream()
-                //.filter(movie -> movie.getVote_average() > 0)
                 .sorted(Comparator.comparing(Movie::getVote_average).reversed())
                 .collect(Collectors.toList());
 
-        moviesList = movies;
+        moviesList = moviesByRate;
 
         tvData.setItems(FXCollections.observableArrayList(moviesByRate));
     }
@@ -282,7 +314,7 @@ public class AppController implements Initializable {
                 .sorted(Comparator.comparing(Movie::getVote_count))
                 .collect(Collectors.toList());
 
-        moviesList = movies;
+        moviesList = moviesByVotes;
 
         tvData.setItems(FXCollections.observableArrayList(moviesByVotes));
     }
@@ -293,7 +325,7 @@ public class AppController implements Initializable {
                 .sorted(Comparator.comparing(Movie::getVote_average))
                 .collect(Collectors.toList());
 
-        moviesList = movies;
+        moviesList = moviesByRate;
 
         tvData.setItems(FXCollections.observableArrayList(moviesByRate));
     }
