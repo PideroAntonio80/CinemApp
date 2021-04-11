@@ -110,7 +110,7 @@ public class SeriesController implements Initializable {
 
             BufferedInputStream in = new BufferedInputStream(urlBasePicture.openStream());
 
-            image = new Image(in, 336, 285, false, false);
+            image = new Image(in, 278, 228, false, false);
         } catch (IOException ioe) {
             ioe.printStackTrace();
         }

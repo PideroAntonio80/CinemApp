@@ -49,17 +49,6 @@ public class MovieService {
         return api.getAllSeries();
     }
 
-    /*public List<Genre> getGenres() {
-        Call<List<Genre>> allGenres = api.getAllGenre();
-        try {
-            Response<List<Genre>> response = allGenres.execute();
-            return response.body();
-        } catch (IOException ioe) {
-            ioe.printStackTrace();
-        }
-        return null;
-    }*/
-
     public Observable<List<Genre>> getAllGenre() {
         return api.getAllGenre();
     }

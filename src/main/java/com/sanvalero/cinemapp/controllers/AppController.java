@@ -5,6 +5,7 @@ import com.sanvalero.cinemapp.service.MovieService;
 import com.sanvalero.cinemapp.util.AlertUtils;
 import com.sanvalero.cinemapp.util.R;
 import javafx.animation.PauseTransition;
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -27,10 +28,14 @@ import org.apache.commons.csv.CSVPrinter;
 import java.io.*;
 import java.lang.reflect.Field;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.sql.SQLException;
 import java.util.Comparator;
 import java.util.List;
 import java.util.ResourceBundle;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -114,25 +119,25 @@ public class AppController implements Initializable {
 
             case "Votos (Descendente)":
                 CompletableFuture.runAsync(this::loadingByVotesDesc);
-                loadingInfo();
+                loadingInfo("Recargando...");
 
                 break;
 
             case "Puntos(Descendente)":
                 CompletableFuture.runAsync(this::loadingByRateDesc);
-                loadingInfo();
+                loadingInfo("Recargando...");
 
                 break;
 
             case "Votos (Ascendente)":
                 CompletableFuture.runAsync(this::loadingByVotesAsc);
-                loadingInfo();
+                loadingInfo("Recargando...");
 
                 break;
 
             case "Puntos (Ascendente)":
                 CompletableFuture.runAsync(this::loadingByRateAsc);
-                loadingInfo();
+                loadingInfo("Recargando...");
 
                 break;
 
@@ -141,7 +146,6 @@ public class AppController implements Initializable {
 
                 break;
         }
-
     }
 
     @FXML
@@ -163,7 +167,7 @@ public class AppController implements Initializable {
 
             BufferedInputStream in = new BufferedInputStream(urlBasePicture.openStream());
 
-            image = new Image(in, 336, 285, false, false);
+            image = new Image(in, 289, 238, false, false);
         } catch (IOException ioe) {
             ioe.printStackTrace();
         }
@@ -213,24 +217,31 @@ public class AppController implements Initializable {
     @FXML
     public void export(ActionEvent Event) {
         export();
-        lStatus.setText("Datos transferidos");
-        transitionLabel(2);
+        loadingInfo("Datos transferidos");
     }
 
     @FXML
-    public void exportToZip(ActionEvent Event) {
-        CompletableFuture.supplyAsync(this::export)
-                .thenAccept(this::compressToZip)
-                .whenComplete((string, throwable) ->
-                        System.out.println("Datos comprimidos"));
+    public void exportToZip(ActionEvent Event) throws ExecutionException, InterruptedException {
+        File file = export();
+
+        CompletableFuture.supplyAsync(() -> file.getAbsolutePath().concat(".zip"))
+                .thenAccept(System.out::println)
+                .whenComplete((unused, throwable) -> {
+                    System.out.println("Archivo .zip generado en: " + file.getAbsolutePath().concat(".zip"));
+                    Platform.runLater(() -> {
+                        compressToZip(file);
+                        loadingInfo("Datos comprimidos");
+                    });
+                }).get();
     }
 
-    public String export() {
+    public File export() {
+        File file = null;
         FileChooser fileChooser = new FileChooser();
-        File file = fileChooser.showSaveDialog(null);
+        file = fileChooser.showSaveDialog(null);
 
         try {
-            FileWriter fileWriter = new FileWriter(file);
+            FileWriter fileWriter = new FileWriter(file + ".csv");
             CSVPrinter printer = new CSVPrinter(fileWriter, CSVFormat.TDF.withHeader("Nombre;", "Fecha;", "Votos;","Puntos;"));
             for (Movie movie : moviesList) {
                 printer.printRecord(movie.getOriginal_title(), ';', movie.getRelease_date(), ';', movie.getVote_count(), ';', movie.getVote_average());
@@ -238,30 +249,35 @@ public class AppController implements Initializable {
             printer.close();
 
         } catch (IOException ioe) {
+            ioe.printStackTrace();
             AlertUtils.mostrarError("Error al exportar los datos");
         }
-        return String.valueOf(file);
+        return file;
     }
 
-    public void compressToZip(String sourceFile) {
+    public void compressToZip(File file) {
 
         try {
-            FileOutputStream fos = new FileOutputStream("compressed.zip");
-            ZipOutputStream zipOut = new ZipOutputStream(fos);
-            File fileToZip = new File(sourceFile);
-            FileInputStream fis = new FileInputStream(fileToZip);
-            ZipEntry zipEntry = new ZipEntry(fileToZip.getName());
-            zipOut.putNextEntry(zipEntry);
+            FileOutputStream fos = new FileOutputStream(file.getAbsolutePath().concat(".zip"));
+            ZipOutputStream zos = new ZipOutputStream(fos);
+            FileInputStream fis = new FileInputStream(file.getAbsolutePath().concat(".csv"));
+            ZipEntry zipEntry = new ZipEntry(file.getName().concat(".csv"));
+
+            zos.putNextEntry(zipEntry);
+
             byte[] bytes = new byte[1024];
             int length;
-            while ((length = fis.read(bytes)) >= 0) {
-                zipOut.write(bytes, 0, length);
+            while ((length = fis.read(bytes)) >=0){
+                zos.write(bytes, 0, length);
             }
-            zipOut.close();
+            zos.close();
             fis.close();
             fos.close();
-        } catch (IOException e) {
-            e.printStackTrace();
+
+            Files.delete(Path.of(file.getAbsolutePath().concat(".csv")));
+
+        } catch (IOException ex) {
+            AlertUtils.mostrarError("Error al exportar  Zip");
         }
     }
 
@@ -337,8 +353,8 @@ public class AppController implements Initializable {
         visiblePause.play();
     }
 
-    public void loadingInfo() {
-        lStatus.setText("Recargando...");
+    public void loadingInfo(String message) {
+        lStatus.setText(message);
         transitionLabel(2);
     }
 

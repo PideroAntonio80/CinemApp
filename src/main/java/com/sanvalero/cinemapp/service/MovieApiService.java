@@ -20,9 +20,6 @@ public interface MovieApiService {
     @GET("tv/popular?api_key=7e20756ea67b5217bad3146ba5b0c0e2&language=es-ES&page=1")
     Observable<SeriesApiResults> getAllSeries();
 
-    /*@GET("genre/movie/list?api_key=7e20756ea67b5217bad3146ba5b0c0e2&language=es-ES")
-    Call<List<Genre>> getAllGenre();*/
-
     @GET("genre/movie/list?api_key=7e20756ea67b5217bad3146ba5b0c0e2&language=es-ES")
     Observable<List<Genre>> getAllGenre();
 
