@@ -73,6 +73,7 @@ public class SeriesController implements Initializable {
 
     @FXML
     public void all(ActionEvent event) {
+        tfSearch.setText("");
         tvData.getItems().clear();
         completeLoad();
     }
@@ -184,7 +185,6 @@ public class SeriesController implements Initializable {
     }
 
     public void loadingSeriesFilter(String optionSearch) {
-
         List<Serie> series = mySeries.stream()
                 .filter(serie -> serie.getOriginal_name().contains(optionSearch))
                 .distinct()
