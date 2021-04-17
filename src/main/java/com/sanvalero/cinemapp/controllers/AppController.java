@@ -30,7 +30,6 @@ import java.lang.reflect.Field;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.sql.SQLException;
 import java.util.Comparator;
 import java.util.List;
 import java.util.ResourceBundle;
@@ -57,8 +56,6 @@ public class AppController implements Initializable {
     public TextArea taOverview;
     public ProgressBar pbLoading;
     public WebView wvTrailer;
-    public VBox vbMovies;
-    public VBox vbSeries;
 
     private WebEngine engine;
 
@@ -82,7 +79,6 @@ public class AppController implements Initializable {
         movieService = new MovieService();
 
         CompletableFuture.runAsync(() -> {
-            //lStatus.setText("Cargando Peliculas...");
             pbLoading.setProgress(ProgressIndicator.INDETERMINATE_PROGRESS);
             try {
                 Thread.sleep(3000);
@@ -91,9 +87,6 @@ public class AppController implements Initializable {
             }
             loadingMovies();})
                 .whenComplete((string, throwable) -> pbLoading.setVisible(false));
-                /*.whenComplete((string, throwable) -> {
-                    lStatus.setText("Carga Finalizada");
-                    transitionLabel(2);});*/
     }
 
     @FXML

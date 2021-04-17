@@ -1,6 +1,8 @@
 package com.sanvalero.cinemapp.controllers;
 
 import com.sanvalero.cinemapp.domain.Serie;
+import com.sanvalero.cinemapp.domain.SeriesApiResults;
+import com.sanvalero.cinemapp.domain.SeriesTrailerResults;
 import com.sanvalero.cinemapp.domain.Trailer;
 import com.sanvalero.cinemapp.service.MovieService;
 import com.sanvalero.cinemapp.util.AlertUtils;
@@ -14,10 +16,10 @@ import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.layout.VBox;
 import javafx.scene.web.WebEngine;
 import javafx.scene.web.WebView;
 import javafx.util.Duration;
+import rx.Observable;
 import rx.schedulers.Schedulers;
 
 import java.io.BufferedInputStream;
@@ -47,8 +49,6 @@ public class SeriesController implements Initializable {
     public TextArea taOverview;
     public ProgressBar pbLoading;
     public WebView wvTrailer;
-    public VBox vbSeries;
-    public VBox vbMovies;
 
     private WebEngine engine;
 
@@ -56,8 +56,7 @@ public class SeriesController implements Initializable {
 
     private MovieService movieService;
 
-    private ObservableList<Serie> mySeries = FXCollections.observableArrayList();
-    private ObservableList<Trailer> myTrailers = FXCollections.observableArrayList();
+    private ObservableList<Serie> mySeries;
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
@@ -66,6 +65,8 @@ public class SeriesController implements Initializable {
         engine = wvTrailer.getEngine();
 
         movieService = new MovieService();
+
+        mySeries = FXCollections.observableArrayList();
 
         completeLoad();
     }
@@ -84,8 +85,6 @@ public class SeriesController implements Initializable {
             AlertUtils.mostrarError("Debes rellenar el campo de texto");
             return;
         }
-
-        //tvData.getItems().clear();
 
         loadingSeriesFilter(option);
     }
@@ -120,23 +119,19 @@ public class SeriesController implements Initializable {
     @FXML
     public void trailer() {
         Serie serie = tvData.getSelectionModel().getSelectedItem();
-        /*int serieId = serie.getId();
-        String baseUrlTrailer = "https://www.youtube.com/watch?v=";
-
-        movieService.getTrailerSerie(serieId)
-                .map(SeriesTrailerResults::getResults)
-                .flatMap(Observable::from)
-                .doOnCompleted(() -> System.out.println("Trailer descargado"))
-                .subscribeOn(Schedulers.from(Executors.newCachedThreadPool()))
-                .subscribe(t -> myTrailers.add(t));
-
-        engine.load(baseUrlTrailer + myTrailers.get(0).getKey());*/
-
         int serieId = serie.getId();
 
         String baseUrlTrailer = "https://www.youtube.com/watch?v=";
-        String trailer = movieService.getTrailerSerie(serieId).get(0).getKey();
-        engine.load(baseUrlTrailer + trailer);
+
+        Trailer myTrailer = new Trailer();
+
+        movieService.getTrailerSerie(serieId)
+                .map(SeriesTrailerResults::getResults)
+                .map(list -> list.get(0))
+                .doOnCompleted(() -> System.out.println("Trailer descargado"))
+                .subscribe(t -> myTrailer.setKey(t.getKey()));
+
+        engine.load(baseUrlTrailer + myTrailer.getKey());
     }
 
     @FXML
@@ -168,11 +163,11 @@ public class SeriesController implements Initializable {
         tvData.setItems(mySeries);
 
         movieService.getAllSeries()
+                .map(SeriesApiResults::getResults)
+                .flatMap(Observable::from)
                 .doOnCompleted(() -> System.out.println("Listado de series descargado"))
                 .subscribeOn(Schedulers.from(Executors.newCachedThreadPool()))
-                .subscribe(sar -> {sar.getResults();
-                    mySeries.addAll(sar.getResults());
-                });
+                .subscribe(sar -> mySeries.add(sar));
     }
 
     public void completeLoad() {
@@ -180,7 +175,7 @@ public class SeriesController implements Initializable {
         CompletableFuture.runAsync(() -> {
             pbLoading.setProgress(ProgressIndicator.INDETERMINATE_PROGRESS);
             try {
-                Thread.sleep(3000);
+                Thread.sleep(3000); // <-- Pequeña trampa para disfrutar de la barra de progreso
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }

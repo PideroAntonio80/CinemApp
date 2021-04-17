@@ -45,14 +45,6 @@ public class MovieService {
         return null;
     }
 
-    public Observable<SeriesApiResults> getAllSeries() {
-        return api.getAllSeries();
-    }
-
-    public Observable<List<Genre>> getAllGenre() {
-        return api.getAllGenre();
-    }
-
     public List<Trailer> getTrailerMovie(int id) {
         Call<MoviesTrailerResults> trailer = api.getTrailerByIdMovie(id);
         try {
@@ -66,16 +58,11 @@ public class MovieService {
         return null;
     }
 
-    public List<Trailer> getTrailerSerie(int id) {
-        Call<SeriesTrailerResults> trailer = api.getTrailerByIdSerie(id);
-        try {
-            Response<SeriesTrailerResults> response = trailer.execute();
-            if (response.body() != null) {
-                return new ArrayList<>(response.body().getResults());
-            }
-        } catch (IOException ioe) {
-            ioe.printStackTrace();
-        }
-        return null;
+    public Observable<SeriesApiResults> getAllSeries() {
+        return api.getAllSeries();
+    }
+
+    public Observable<SeriesTrailerResults> getTrailerSerie(Integer id) {
+        return api.getTrailerByIdSerie(id);
     }
 }
